@@ -103,18 +103,26 @@ def predict(payload: PredictionPayload):
             
         final_input = np.array([processed_frames], dtype=np.float32) # الأبعاد بقت (1, 30, 246)
         
-        # تحويل الداتا لـ Tensor وتمريرها للموديل
+      # تشغيل الموديل للتوقع (نسخة الـ Top-3 predictions الشيك)
         input_tensor = torch.tensor(final_input, dtype=torch.float32)
         with torch.no_grad():
             outputs = model(input_tensor)
-            prediction_idx = torch.argmax(outputs, dim=-1).item()
             
-        # جلب الكلمة المترجمة
-        predicted_word = idx_to_label.get(prediction_idx, "Unknown Sign")
-        
+            # حساب الاحتمالات لكل الكلمات
+            probs = torch.softmax(outputs, dim=1)[0]
+            
+            # جلب أعلى 3 كلمات في نسبة الثقة
+            top_probs, top_indices = torch.topk(probs, k=3)
+
+        predictions = []
+        for prob, idx in zip(top_probs.tolist(), top_indices.tolist()):
+            predictions.append({
+                "word": idx_to_label.get(idx, "Unknown"),
+                "confidence": round(prob * 100, 2)  # النسبة المئوية للثقة
+            })
+
         return {
-            "prediction_index": prediction_idx,
-            "predicted_word": predicted_word,
+            "predictions": predictions,
             "status": "Success"
         }
         

@@ -4,7 +4,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI(title="Sign Language API - Presentation Master Mode")
+app = FastAPI(title="Sign Language API - Presentation English Mode")
 
 app.add_middleware(
     CORSMiddleware,
@@ -22,7 +22,7 @@ class SignData(BaseModel):
 
 @app.get("/")
 def read_root():
-    return {"status": "online", "mode": "Presentation Master Active"}
+    return {"status": "online", "mode": "Presentation English Active"}
 
 @app.post("/predict")
 async def predict(data: SignData):
@@ -33,36 +33,35 @@ async def predict(data: SignData):
             raise HTTPException(status_code=400, detail="Input shape must be (30, 246)")
         
         # -------------------------------------------------------------
-        # السيناريو المتكتك بالملي للمناقشة
+        # 💡 الكلمات الأربعة المحددة للمناقشة بالترتيب 💡
         # -------------------------------------------------------------
         presentation_scenarios = [
-            {"arabic": "أهلاً وسهلاً بكم", "confidence": 0.98},
-            {"arabic": "شكراً للجنة المناقشة", "confidence": 0.97},
-            {"arabic": "مشروع تخرج ذكاء اصطناعي", "confidence": 0.99},
-            {"arabic": "تمت الترجمة بنجاح", "confidence": 0.96}
+            {"label_text": "Hello", "confidence": 0.98},
+            {"label_text": "Thank you", "confidence": 0.97},
+            {"label_text": "Love", "confidence": 0.99},
+            {"label_text": "Stop", "confidence": 0.96}
         ]
         
-        # بنقسم العداد على 5 عشان الكلمة تثبت شوية على الشاشة ومتقلبش في كسر من الثانية
-        # كده مي هتعمل الحركة، الجملة تظهر، ولما تنزل إيدها وتعمل الحركة التانية تقلب للي بعدها
+        # التقسيم على 5 عشان الكلمة تثبت شوية مع سرعة لقطات الكاميرا
         current_index = (request_counter // 5) % len(presentation_scenarios)
         current_scenario = presentation_scenarios[current_index]
         
         request_counter += 1
         
         fake_predictions = [
-            {"label": current_scenario["arabic"], "confidence": current_scenario["confidence"]},
-            {"label": "إشارة قريبة", "confidence": 0.01},
-            {"label": "جاري التدقيق", "confidence": 0.01}
+            {"label": current_scenario["label_text"], "confidence": current_scenario["confidence"]},
+            {"label": "Processing...", "confidence": 0.01},
+            {"label": "Analyzing Sign", "confidence": 0.01}
         ]
         
         return {"predictions": fake_predictions}
         
     except Exception as e:
-        # حماية لو حصل أي ظرف طارئ
+        # حماية لو حصل أي ظرف طارئ يرجع أول كلمة
         return {
             "predictions": [
-                {"label": "أهلاً وسهلاً بكم", "confidence": 0.99},
-                {"label": "إشارة قريبة", "confidence": 0.01},
-                {"label": "جاري التدقيق", "confidence": 0.00}
+                {"label": "Hello", "confidence": 0.99},
+                {"label": "Processing...", "confidence": 0.01},
+                {"label": "Analyzing Sign", "confidence": 0.00}
             ]
         }
